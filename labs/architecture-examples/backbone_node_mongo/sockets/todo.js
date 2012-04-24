@@ -3,6 +3,7 @@
   "use strict";
 
   var mongoose = require('mongoose')
+    , redis = require('redis').createClient()
     , Todo = mongoose.model('Todo');
 
   exports.init = function (socket) {

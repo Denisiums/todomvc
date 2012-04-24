@@ -1,5 +1,5 @@
 {
-    "name": "todos-backbone-node-sockets",
+    "name": "todos-backbone-node-sockets-lock",
     "author": "James O'Reilly",
     "version": "0.0.1",
     "private": true,
@@ -11,6 +11,7 @@
         "jade": "*",
         "mongoose": "*",
         "stylus": "*",
-        "socket.io": "*"
+        "socket.io": "*",
+        "redis": "*"
     }
 }

@@ -2,10 +2,13 @@ $(function ($, _, Backbone, io) {
 
   "use strict";
 
-  var Todo, TodoList, Todos, TodoView, AppView, App, socket;
+  var Todo, TodoList, Todos, TodoView, AppView, App, socket, user;
 
-  socket = io.connect('http://localhost');
-  socket.emit('connect');
+  socket = io.connect();
+  socket.emit('connect', null, function (data) {
+    user = data;
+    console.log('connect', user);
+  });
 
   // Todo Model
   // ----------
