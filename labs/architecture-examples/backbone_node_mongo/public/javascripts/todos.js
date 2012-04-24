@@ -1,8 +1,11 @@
-$(function ($, _, Backbone) {
+$(function ($, _, Backbone, io) {
 
   "use strict";
 
-  var Todo, TodoList, Todos, TodoView, AppView, App;
+  var Todo, TodoList, Todos, TodoView, AppView, App, socket;
+
+  socket = io.connect('http://localhost');
+  socket.emit('connect');
 
   // Todo Model
   // ----------
@@ -12,6 +15,14 @@ $(function ($, _, Backbone) {
 
     // MongoDB uses _id as default primary key
     idAttribute: "_id",
+
+    noIoBind: false,
+
+    socket: socket,
+
+    url: function () {
+      return "/todo" + ((this.id) ? '/' + this.id : '');
+    },
 
     // Default attributes for the todo item.
     defaults: function () {
@@ -27,6 +38,11 @@ $(function ($, _, Backbone) {
       if (!this.get("title")) {
         this.set({"title": this.defaults.title});
       }
+      _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+      if (!this.noIoBind) {
+        this.ioBind('update', this.serverChange, this);
+        this.ioBind('delete', this.serverDelete, this);
+      }
     },
 
     // Toggle the `done` state of this todo item.
@@ -35,10 +51,31 @@ $(function ($, _, Backbone) {
     },
 
     // Remove this Todo and delete its view.
-    clear: function () {
-      this.destroy();
-    }
+    clear: function (options) {
+      this.destroy(options);
+      this.modelCleanup();
+    },
 
+    serverChange: function (data) {
+      console.log('serverChange', data);
+      // Useful to prevent loops when dealing with client-side updates
+      // (ie: forms).
+      data.fromServer = true;
+      this.set(data);
+    },
+
+    serverDelete: function (data) {
+      if (typeof this.collection === 'object') {
+        this.collection.remove(this);
+      } else {
+        this.trigger('remove', this);
+      }
+    },
+
+    modelCleanup: function () {
+      this.ioUnbindAll();
+      return this;
+    }
   });
 
   // Todo Collection
@@ -49,6 +86,8 @@ $(function ($, _, Backbone) {
     // Reference to this collection's model.
     model: Todo,
 
+    socket: socket,
+
     // Returns the relative URL where the model's resource would be
     // located on the server. If your models are located somewhere else,
     // override this method with the correct logic. Generates URLs of the
@@ -57,6 +96,33 @@ $(function ($, _, Backbone) {
     // Note that url may also be defined as a function.
     url: function () {
       return "/todo" + ((this.id) ? '/' + this.id : '');
+    },
+
+    initialize: function () {
+      _.bindAll(this, 'collectionCleanup');
+      //this.ioBind('create', this.serverCreate, this);
+      socket.on('/todo:create', this.serverCreate, this);
+    },
+
+    serverCreate: function (data) {
+      if (data) {
+        // make sure no duplicates, just in case
+        var todo = Todos.get(data._id);
+        if (typeof todo === 'undefined') {
+          Todos.add(data);
+        } else {
+          data.fromServer = true;
+          todo.set(data);
+        }
+      }
+    },
+
+    collectionCleanup: function (callback) {
+      this.ioUnbindAll();
+      this.each(function (model) {
+        model.modelCleanup();
+      });
+      return this;
     },
 
     // Filter down the list of all todo items that are finished.
@@ -112,7 +178,11 @@ $(function ($, _, Backbone) {
     // app, we set a direct reference on the model for convenience.
     initialize: function () {
       this.model.bind('change', this.render, this);
-      this.model.bind('destroy', this.remove, this);
+      //this.model.bind('destroy', this.remove, this);
+
+      //Todos.bind('reset', this.render, this);
+      //Todos.bind('add', this.render, this);
+      Todos.bind('remove', this.serverDelete, this);
     },
 
     // Re-render the titles of the todo item.
@@ -154,6 +224,13 @@ $(function ($, _, Backbone) {
     // Remove the item, destroy the model.
     clear: function () {
       this.model.clear();
+    },
+
+    serverDelete: function (data) {
+      if (data.id === this.model.id) {
+        this.model.clear({silent: true});
+        this.$el.remove();
+      }
     }
 
   });
@@ -231,7 +308,10 @@ $(function ($, _, Backbone) {
       if (e.keyCode !== 13) { return; }
       if (!this.input.val()) { return; }
 
-      Todos.create({title: this.input.val()});
+      var t = new Todo({title: this.input.val()});
+      t.save();
+
+      //Todos.create({title: this.input.val()});
       this.input.val('');
     },
 
@@ -251,4 +331,4 @@ $(function ($, _, Backbone) {
   // Finally, we kick things off by creating the **App**.
   App = new AppView();
 
-}(jQuery, _, Backbone));
+}(jQuery, _, Backbone, io));

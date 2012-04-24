@@ -3,7 +3,10 @@ var express = require('express')
   , mongoose = require('mongoose')
   , models = require('./models')
   , routes = require('./routes')
-  , app = express();
+  , sockets = require('./sockets')
+  , app = express()
+  , srvr
+  , io;
 
 app.configure(function () {
   app.set('views', __dirname + '/views');
@@ -22,9 +25,10 @@ app.configure('development', function () {
 });
 
 routes.init(app);
-
 mongoose.connect("127.0.0.1", "todomvc", 27017);
-
-http.createServer(app).listen(3000);
+srvr = http.createServer(app);
+io = require('socket.io').listen(srvr);
+sockets.init(io);
+srvr.listen(3000);
 
 console.log("Express server listening on port 3000");
