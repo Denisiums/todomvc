@@ -7,9 +7,8 @@ var express = require('express')
   , connect = require('express/node_modules/connect')
   , RedisStore = require('connect-redis')(express)
   , sessionStore = new RedisStore()
-  , app = express()
-  , srvr
-  , io;
+  , app = express.createServer()
+  , sio;
 
 app.configure(function () {
   app.set('views', __dirname + '/views');
@@ -35,9 +34,10 @@ app.configure('development', function () {
 
 routes.init(app);
 mongoose.connect("127.0.0.1", "todomvc", 27017);
-srvr = http.createServer(app);
-io = require('socket.io').listen(srvr);
-sockets.init(io, sessionStore);
-srvr.listen(3000);
+
+app.listen(3000);
+
+sio = require('socket.io').listen(app);
+sockets.init(sio, sessionStore);
 
 console.log("Express server listening on port 3000");

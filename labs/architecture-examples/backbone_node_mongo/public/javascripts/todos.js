@@ -45,6 +45,8 @@ $(function ($, _, Backbone, io) {
       if (!this.noIoBind) {
         this.ioBind('update', this.serverChange, this);
         this.ioBind('delete', this.serverDelete, this);
+        this.ioBind('lock', this.serverLock, this);
+        this.ioBind('unlock', this.serverUnlock, this);
       }
     },
 
@@ -74,10 +76,65 @@ $(function ($, _, Backbone, io) {
         this.trigger('remove', this);
       }
     },
+    serverLock: function (success) {
+      console.log('locked from server', success);
+      if (success) {
+        this.locked = true;
+        //this.trigger('lock', this);
+      }
+    },
+    serverUnlock: function (success) {
+      console.log('unlocked from server', success);
+      if (success) {
+        this.locked = false;
+      }
+    },
 
     modelCleanup: function () {
       this.ioUnbindAll();
       return this;
+    },
+
+    locked: false,
+
+    lock: function (options) {
+      if (!this._locked) {
+        console.log('locking');
+        options = options ? _.clone(options) : {};
+        var model = this
+          , success = options.success;
+        options.success = function (resp, status, xhr) {
+          console.log('locked in callback', resp, status, xhr);
+          model.locked = true;
+          if (success) {
+            success(model, resp);
+          } else {
+            model.trigger('lock', model, resp, options);
+          }
+        };
+        options.error = Backbone.wrapError(options.error, model, options);
+        return (this.sync || Backbone.sync).call(this, 'lock', this, options);
+      }
+    },
+
+    unlock: function (options) {
+      if (this.locked) {
+        console.log('unlocking');
+        options = options ? _.clone(options) : {};
+        var model = this
+          , success = options.success;
+        options.success = function (resp, status, xhr) {
+          console.log('unlocked in callback', resp, status, xhr);
+          model._locked = false;
+          if (success) {
+            success(model, resp);
+          } else {
+            model.trigger('unlock', model, resp, options);
+          }
+        };
+        options.error = Backbone.wrapError(options.error, model, options);
+        return (this.sync || Backbone.sync).call(this, 'unlock', this, options);
+      }
     }
   });
 
@@ -172,8 +229,8 @@ $(function ($, _, Backbone, io) {
       "click .toggle"   : "toggleDone",
       "dblclick .view"  : "edit",
       "click a.destroy" : "clear",
-      "keypress .edit"  : "updateOnEnter",
-      "blur .edit"      : "close"
+      "keypress .edit"  : "updateOnEnter"
+      //"blur .edit"      : "close"
     },
 
     // The TodoView listens for changes to its model, re-rendering. Since there's
@@ -181,6 +238,8 @@ $(function ($, _, Backbone, io) {
     // app, we set a direct reference on the model for convenience.
     initialize: function () {
       this.model.bind('change', this.render, this);
+      this.model.bind('lock', this.serverLock, this);
+      this.model.bind('unlock', this.serverUnlock, this);
       //this.model.bind('destroy', this.remove, this);
 
       //Todos.bind('reset', this.render, this);
@@ -203,8 +262,11 @@ $(function ($, _, Backbone, io) {
 
     // Switch this view into `"editing"` mode, displaying the input field.
     edit: function () {
-      this.$el.addClass("editing");
-      this.input.focus();
+      if (!this.model.locked) {
+        this.$el.addClass("editing");
+        this.input.focus();
+        this.model.lock();
+      }
     },
 
     // Close the `"editing"` mode, saving changes to the todo.
@@ -215,6 +277,7 @@ $(function ($, _, Backbone, io) {
       }
       this.model.save({title: value});
       this.$el.removeClass("editing");
+      this.model.unlock();
     },
 
     // If you hit `enter`, we're through editing the item.
@@ -226,7 +289,9 @@ $(function ($, _, Backbone, io) {
 
     // Remove the item, destroy the model.
     clear: function () {
-      this.model.clear();
+      if (!this.model.locked) {
+        this.model.clear();
+      }
     },
 
     serverDelete: function (data) {
@@ -234,8 +299,19 @@ $(function ($, _, Backbone, io) {
         this.model.clear({silent: true});
         this.$el.remove();
       }
-    }
+    },
 
+    serverLock: function () {
+      if (!this.$el.hasClass("editing") && this.model.locked) {
+        this.$el.addClass('locked');
+        this.$('.toggle').attr('disabled', true);
+      }
+    },
+
+    serverUnlock: function () {
+      this.$el.removeClass('locked');
+      this.$('.toggle').attr('disabled', false);
+    }
   });
 
   // The Application
@@ -270,8 +346,8 @@ $(function ($, _, Backbone, io) {
       Todos.bind('reset', this.addAll, this);
       Todos.bind('all', this.render, this);
 
-      this.footer = this.$('footer');
-      this.main = $('#main');
+      this.footer = this.$("footer");
+      this.main = $("#main");
 
       Todos.fetch();
     },

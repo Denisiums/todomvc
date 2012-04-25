@@ -8,12 +8,12 @@
     , parseCookie = connect.utils.parseCookie
     , Session = connect.middleware.session.Session;
 
-  exports.init = function (io, sessionStore) {
+  exports.init = function (sio, sessionStore) {
 
-    io.set('authorization', function (data, callback) {
+    sio.set('authorization', function (data, callback) {
 
       if (!data.headers.cookie) {
-        callback('No cookie transmitted.', false);
+        return callback('No cookie transmitted.', false);
       }
 
       data.cookie = parseCookie(data.headers.cookie);
@@ -24,46 +24,42 @@
         console.log('sessionStore.get', data.sessionID, err, session);
 
         if (err || !session) {
-          callback('No session', false);
+          return callback('Error', false);
         } else {
+          console.log(data.sessionID, session);
           data.session = new Session(data, session);
-          callback(null, true);
+          return callback(null, true);
         }
 
       });
 
     });
 
-    io.sockets.on('connection', function (socket) {
-      var sessionID = socket.handshake.sessionID;
+    sio.on('connection', function (socket) {
+      var hs = socket.handshake
+        , sessionID = hs.sessionID;
 
       console.log('A socket with sessionID ' + sessionID + ' connected!');
 
-      socket.log.info(
-        'a socket with sessionID',
-        socket.handshake.sessionID,
-        'connected'
-      );
-
-      socket.on('set value', function (val) {
-        sessionID.reload(function () {
-          sessionID.value = val;
-          sessionID.touch().save();
-        });
-      });
-
+      // ----------------------------------------------------
+      // Connect
+      //
       socket.on('connect', function (data, callback) {
         console.log('connect ' + sessionID);
         // nothing yet
       });
 
+      // ----------------------------------------------------
+      // Disconnect
+      //
       socket.on('disconnect', function (data, callback) {
         console.log('disconnect ' + sessionID);
         // nothing yet
       });
 
-      todo.init(socket);
+      todo.init(socket, hs);
     });
+
 
   };
 
