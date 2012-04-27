@@ -3,13 +3,17 @@
   "use strict";
 
   var mongoose = require('mongoose')
-    , todo = require('./todo')
     , connect = require('express/node_modules/connect')
     , parseCookie = connect.utils.parseCookie
-    , Session = connect.middleware.session.Session;
+    , Session = connect.middleware.session.Session
+    , crud = require('./crud')
+    , store = require('redis').createClient();
 
   exports.init = function (sio, sessionStore) {
 
+    // ----------------------------------------------------
+    // Autherization
+    //
     sio.set('authorization', function (data, callback) {
 
       if (!data.headers.cookie) {
@@ -35,6 +39,9 @@
 
     });
 
+    // ----------------------------------------------------
+    // Connection
+    //
     sio.on('connection', function (socket) {
       var hs = socket.handshake
         , sessionID = hs.sessionID;
@@ -46,7 +53,7 @@
       //
       socket.on('connect', function (data, callback) {
         console.log('connect ' + sessionID);
-        // nothing yet
+        callback('connected');
       });
 
       // ----------------------------------------------------
@@ -57,7 +64,7 @@
         // nothing yet
       });
 
-      todo.init(socket, hs);
+      crud.addListeners(mongoose.model('Todo'), 'todo', socket, hs);
     });
 
 

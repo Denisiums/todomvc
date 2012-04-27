@@ -6,8 +6,7 @@ $(function ($, _, Backbone, io) {
 
   socket = io.connect();
   socket.emit('connect', null, function (data) {
-    user = data;
-    console.log('connect', user);
+    console.log(data);
   });
 
   // Todo Model
@@ -62,9 +61,6 @@ $(function ($, _, Backbone, io) {
     },
 
     serverChange: function (data) {
-      console.log('serverChange', data);
-      // Useful to prevent loops when dealing with client-side updates
-      // (ie: forms).
       data.fromServer = true;
       this.set(data);
     },
@@ -77,14 +73,12 @@ $(function ($, _, Backbone, io) {
       }
     },
     serverLock: function (success) {
-      console.log('locked from server', success);
       if (success) {
         this.locked = true;
         //this.trigger('lock', this);
       }
     },
     serverUnlock: function (success) {
-      console.log('unlocked from server', success);
       if (success) {
         this.locked = false;
       }
@@ -99,12 +93,10 @@ $(function ($, _, Backbone, io) {
 
     lock: function (options) {
       if (!this._locked) {
-        console.log('locking');
         options = options ? _.clone(options) : {};
         var model = this
           , success = options.success;
         options.success = function (resp, status, xhr) {
-          console.log('locked in callback', resp, status, xhr);
           model.locked = true;
           if (success) {
             success(model, resp);
@@ -119,12 +111,10 @@ $(function ($, _, Backbone, io) {
 
     unlock: function (options) {
       if (this.locked) {
-        console.log('unlocking');
         options = options ? _.clone(options) : {};
         var model = this
           , success = options.success;
         options.success = function (resp, status, xhr) {
-          console.log('unlocked in callback', resp, status, xhr);
           model._locked = false;
           if (success) {
             success(model, resp);
@@ -229,8 +219,8 @@ $(function ($, _, Backbone, io) {
       "click .toggle"   : "toggleDone",
       "dblclick .view"  : "edit",
       "click a.destroy" : "clear",
-      "keypress .edit"  : "updateOnEnter"
-      //"blur .edit"      : "close"
+      "keypress .edit"  : "updateOnEnter",
+      "blur .edit"      : "close"
     },
 
     // The TodoView listens for changes to its model, re-rendering. Since there's
