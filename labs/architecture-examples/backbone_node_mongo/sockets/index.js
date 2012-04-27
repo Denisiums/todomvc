@@ -25,16 +25,12 @@
       data.sessionStore = sessionStore;
 
       sessionStore.get(data.sessionID, function (err, session) {
-        console.log('sessionStore.get', data.sessionID, err, session);
-
         if (err || !session) {
           return callback('Error', false);
         } else {
-          console.log(data.sessionID, session);
           data.session = new Session(data, session);
           return callback(null, true);
         }
-
       });
 
     });
@@ -44,16 +40,31 @@
     //
     sio.on('connection', function (socket) {
       var hs = socket.handshake
+        , watchedModels = []
         , sessionID = hs.sessionID;
-
-      console.log('A socket with sessionID ' + sessionID + ' connected!');
 
       // ----------------------------------------------------
       // Connect
       //
       socket.on('connect', function (data, callback) {
-        console.log('connect ' + sessionID);
-        callback('connected');
+        var i, len, d = {};
+
+        watchedModels = data;
+
+        function fillData(model, count) {
+          d[model] = { locks: [] };
+          return function (err, result) {
+            d[model].locks = result;
+            if (Object.keys(d).length === count) {
+              callback(null, d);
+            }
+          };
+        }
+
+        for (i = 0, len = data.length; i < len; i++) {
+          store.hkeys(data[i], fillData(data[i], len));
+        }
+
       });
 
       // ----------------------------------------------------
@@ -61,7 +72,30 @@
       //
       socket.on('disconnect', function (data, callback) {
         console.log('disconnect ' + sessionID);
-        // nothing yet
+        console.log('watchedModels ' + watchedModels);
+
+        // unlock records for this user
+
+        function removeLocks(val) {
+          var key = val;
+          return function (err, result) {
+            var keys = Object.keys(result)
+              , i = keys.length
+              , id;
+            while (i--) {
+              id = keys[i];
+              if (result[id] === sessionID) {
+                store.hdel(key, id);
+                socket.broadcast.emit('/' + key + '/' + id + ':unlock', true);
+              }
+            }
+          };
+        }
+
+        watchedModels.forEach(function (val, idx, array) {
+          store.hgetall(val, removeLocks(val));
+        });
+
       });
 
       crud.addListeners(mongoose.model('Todo'), 'todo', socket, hs);

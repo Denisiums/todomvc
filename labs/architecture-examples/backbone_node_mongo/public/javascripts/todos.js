@@ -2,12 +2,9 @@ $(function ($, _, Backbone, io) {
 
   "use strict";
 
-  var Todo, TodoList, Todos, TodoView, AppView, App, socket, user;
+  var Todo, TodoList, Todos, TodoView, AppView, App, socket;
 
   socket = io.connect();
-  socket.emit('connect', null, function (data) {
-    console.log(data);
-  });
 
   // Todo Model
   // ----------
@@ -72,12 +69,14 @@ $(function ($, _, Backbone, io) {
         this.trigger('remove', this);
       }
     },
+
     serverLock: function (success) {
       if (success) {
         this.locked = true;
         //this.trigger('lock', this);
       }
     },
+
     serverUnlock: function (success) {
       if (success) {
         this.locked = false;
@@ -219,8 +218,8 @@ $(function ($, _, Backbone, io) {
       "click .toggle"   : "toggleDone",
       "dblclick .view"  : "edit",
       "click a.destroy" : "clear",
-      "keypress .edit"  : "updateOnEnter",
-      "blur .edit"      : "close"
+      "keypress .edit"  : "updateOnEnter"
+      //"blur .edit"      : "close"
     },
 
     // The TodoView listens for changes to its model, re-rendering. Since there's
@@ -327,7 +326,7 @@ $(function ($, _, Backbone, io) {
     // At initialization we bind to the relevant events on the `Todos`
     // collection, when items are added or changed. Kick things off by
     // loading any preexisting todos.
-    initialize: function () {
+    initialize: function (initalData) {
 
       this.input = this.$("#new-todo");
       this.allCheckbox = this.$("#toggle-all")[0];
@@ -339,7 +338,19 @@ $(function ($, _, Backbone, io) {
       this.footer = this.$("footer");
       this.main = $("#main");
 
-      Todos.fetch();
+      Todos.fetch({
+        success: function (todos, models) {
+          var data = initalData.todo
+            , locks = ((data && data.locks) ? data.locks : [])
+            , model;
+          _.each(locks, function (lock) {
+            model = todos.get(lock);
+            if (model) {
+              model.lock();
+            }
+          });
+        }
+      });
     },
 
     // Re-rendering the App just means refreshing the statistics -- the rest
@@ -397,7 +408,14 @@ $(function ($, _, Backbone, io) {
 
   });
 
-  // Finally, we kick things off by creating the **App**.
-  App = new AppView();
+  // Finally, we kick things off by creating the **App** on successful socket connection
+
+  socket.emit('connect', ['todo'], function (err, data) {
+    if (err) {
+      console.log('Unable to connect.');
+    } else {
+      App = new AppView(data);
+    }
+  });
 
 }(jQuery, _, Backbone, io));
