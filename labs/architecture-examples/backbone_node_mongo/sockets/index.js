@@ -7,9 +7,13 @@
     , parseCookie = connect.utils.parseCookie
     , Session = connect.middleware.session.Session
     , crud = require('./crud')
-    , store = require('redis').createClient();
+    , store = require('redis').createClient()
+    , pub = require('redis').createClient()
+    , sub = require('redis').createClient();
 
   exports.init = function (sio, sessionStore) {
+
+    sub.subscribe('cms');
 
     // ----------------------------------------------------
     // Autherization
@@ -43,6 +47,13 @@
         , watchedModels = []
         , sessionID = hs.sessionID;
 
+      sub.on('message', function (channel, message) {
+        var msg = JSON.parse(message);
+        if (msg && msg.key) {
+          socket.emit(msg.key, msg.data);
+        }
+      });
+
       // ----------------------------------------------------
       // Connect
       //
@@ -71,10 +82,6 @@
       // Disconnect
       //
       socket.on('disconnect', function (data, callback) {
-        console.log('disconnect ' + sessionID);
-        console.log('watchedModels ' + watchedModels);
-
-        // unlock records for this user
 
         function removeLocks(val) {
           var key = val;
@@ -86,7 +93,8 @@
               id = keys[i];
               if (result[id] === sessionID) {
                 store.hdel(key, id);
-                socket.broadcast.emit('/' + key + '/' + id + ':unlock', true);
+                pub.publish('cms', '/' + key + '/' + id + ':unlock');
+                //socket.broadcast.emit('/' + key + '/' + id + ':unlock', true);
               }
             }
           };
@@ -98,9 +106,14 @@
 
       });
 
-      crud.addListeners(mongoose.model('Todo'), 'todo', socket, hs);
+      crud.addListeners({
+        'model': mongoose.model('Todo'),
+        'rooturl': 'todo',
+        'socket': socket,
+        'handshake': hs,
+        'pub': pub
+      });
     });
-
 
   };
 

@@ -226,14 +226,10 @@ $(function ($, _, Backbone, io) {
     // a one-to-one correspondence between a **Todo** and a **TodoView** in this
     // app, we set a direct reference on the model for convenience.
     initialize: function () {
-      this.model.bind('change', this.render, this);
-      this.model.bind('lock', this.serverLock, this);
-      this.model.bind('unlock', this.serverUnlock, this);
-      //this.model.bind('destroy', this.remove, this);
-
-      //Todos.bind('reset', this.render, this);
-      //Todos.bind('add', this.render, this);
-      Todos.bind('remove', this.serverDelete, this);
+      this.model.on('change', this.render, this);
+      this.model.on('lock', this.serverLock, this);
+      this.model.on('unlock', this.serverUnlock, this);
+      Todos.on('remove', this.serverDelete, this);
     },
 
     // Re-render the titles of the todo item.
@@ -331,9 +327,9 @@ $(function ($, _, Backbone, io) {
       this.input = this.$("#new-todo");
       this.allCheckbox = this.$("#toggle-all")[0];
 
-      Todos.bind('add', this.addOne, this);
-      Todos.bind('reset', this.addAll, this);
-      Todos.bind('all', this.render, this);
+      Todos.on('add', this.addOne, this);
+      Todos.on('reset', this.addAll, this);
+      Todos.on('all', this.render, this);
 
       this.footer = this.$("footer");
       this.main = $("#main");

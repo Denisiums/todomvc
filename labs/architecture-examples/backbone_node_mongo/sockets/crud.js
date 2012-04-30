@@ -3,8 +3,20 @@
   "use strict";
   var store = require('redis').createClient();
 
-  exports.addListeners = function (ModelClass, key, socket, hs) {
-    var sessionID = hs.sessionID;
+  exports.addListeners = function (options) {
+
+    var ModelClass = options.model
+      , key = options.rooturl
+      , socket = options.socket
+      , hs = options.handshake
+      , pub = options.pub
+      , sessionID;
+
+    if (!ModelClass || !key || !socket || !hs || !pub) {
+      return;
+    }
+
+    sessionID = hs.sessionID;
 
     // ---------------
     // Create
@@ -13,8 +25,7 @@
       var t = new ModelClass(data)
         , name = '/' + key + ':create';
       t.save(function (err) {
-        socket.emit(name, t);
-        socket.broadcast.emit(name, t);
+        pub.publish('cms', JSON.stringify({key: name, data: t}));
       });
     });
 
@@ -29,6 +40,7 @@
     // Update
     //
     socket.on(key + ':update', function (data, callback) {
+      console.log('on update');
       var name, field;
 
       if (data && data._id) {
@@ -46,8 +58,7 @@
                 result.order = data.order;
                 result.done = data.done;
                 result.save(function (err) {
-                  socket.emit(name, result);
-                  socket.broadcast.emit(name, result);
+                  pub.publish('cms', JSON.stringify({key: name, data: result}));
                 });
               }
             });
@@ -74,11 +85,10 @@
               if (err) {
                 callback(err, data);
               } else {
-                if (result) {
+                if (result) {a
                   result.remove();
                   result.save(function (err) {
-                    socket.emit(name, result);
-                    socket.broadcast.emit(name, result);
+                    pub.publish('cms', JSON.stringify({key: name, data: result}));
                   });
                 }
               }
@@ -105,8 +115,7 @@
           } else {
             store.hset(key, field, sessionID, function (err, result) {
               if (!err) {
-                socket.emit(name, true);
-                socket.broadcast.emit(name, true);
+                pub.publish('cms', JSON.stringify({key: name, data: true}));
               }
             });
           }
@@ -132,8 +141,7 @@
             // they were the person who locked it.
             if (result === sessionID) {
               store.hdel(key, field, function (err, result) {
-                socket.emit(name, true);
-                socket.broadcast.emit(name, true);
+                pub.publish('cms', JSON.stringify({key: name, data: true}));
               });
             }
           }
