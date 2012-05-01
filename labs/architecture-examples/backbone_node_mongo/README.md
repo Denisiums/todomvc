@@ -12,13 +12,14 @@ This demo was written to illustrate how a server-side JavaScript solution could 
 - [Backbone.js](http://documentcloud.github.com/backbone/) - Gives structure to web applications by providing models with key-value binding and custom events, collections with a rich API of enumerable functions, views with declarative event handling, and connects it all to your existing API over a RESTful JSON interface.
 - [backbone.iobind](https://github.com/logicalparadox/backbone.iobind) - Bind socket.io events to backbone models & collections. Also includes a drop-in replacement for Backbone.sync using socket.io.
 - [jQuery](http://jquery.com/) - A fast, concise, library that simplifies how to traverse HTML documents, handle events, perform animations, and add AJAX.
-- [node.js](http://nodejs.org/) - Event-driven I/O server-side JavaScript environment based on V8.
+- [Node.js](http://nodejs.org/) - Event-driven I/O server-side JavaScript environment based on V8.
 - [Express](http://expressjs.com/) - High performance, high class web development for node.js.
 - [Jade](http://jade-lang.com/) - High performance template engine heavily influenced by Haml and implemented with JavaScript for node.js.
 - [Stylus](http://learnboost.github.com/stylus/) - Expressive, dynamic, robust CSS for node.js
-- [socket.io](http://socket.io/) - Aims to make realtime apps possible in every browser and mobile device, blurring the differences between the different transport mechanisms. It's care-free realtime 100% in JavaScript.
+- [Socket.io](http://socket.io/) - Aims to make realtime apps possible in every browser and mobile device, blurring the differences between the different transport mechanisms. It's care-free realtime 100% in JavaScript.
 - [Mongoose](http://mongoosejs.com/) - A MongoDB object modeling tool designed to work in an asynchronous environment.
 - [MongoDB](http://www.mongodb.org/) - A scalable, high-performance, open source NoSQL database.
+- [Redis](http://redis.io/) - an open source, advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets.
 
 ## Running the Demo
 
@@ -28,19 +29,24 @@ This demo was written to illustrate how a server-side JavaScript solution could 
 ```
 $ mongod
 ```
-4. Change the working directory to the project root:
+4. Install [Redis](http://redis.io/download).
+5. Start the Redis Server from another terminal window:
+```
+$ redis-server
+```
+6. Change the working directory to the project root:
 ```
 $ cd <path to todosmvc directory>/labs/architecture-examples/backbone_node_mongo/
 ```
-4. Install dependencies using the node package manger (npm).
+7. Install dependencies using the node package manger (npm).
 ```
 $ sudo npm link
 ```
-5. Start the Todos demo server from a different terminal window:
+8. Start the Todos demo server from a different terminal window:
 ```
 $ node app
 ```
-6. Visit [http://localhost:3000](http://localhost:3000) in a web browser.
+9. Visit [http://localhost:3000](http://localhost:3000) in a web browser.
 
 ## Credit
 
