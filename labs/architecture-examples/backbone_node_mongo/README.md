@@ -1,3 +1,10 @@
+# Deprecated
+
+This project has been deprecated and a newer version will be maintained at:
+https://github.com/jamesor/backbone-boilerplates
+
+
+
 # TodoMVC
 
 #### A common demo application for popular JavaScript MV* frameworks
@@ -21,32 +28,45 @@ This demo was written to illustrate how a server-side JavaScript solution could 
 - [MongoDB](http://www.mongodb.org/) - A scalable, high-performance, open source NoSQL database.
 - [Redis](http://redis.io/) - an open source, advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets.
 
-## Running the Demo
+## Getting the Demo
+
+1. Fork this repo by clicking the "Fork" button above
+2. Clone your fork to make a local working copy.  For example:
+<pre>
+$ git clone git@github.com:[your_github_username]/todomvc.git
+$ cd todomvc/labs/architecture-examples/backbone_node_mongo
+</pre>
+
+## Setting up Dependencies
 
 1. Install [node.js](http://nodejs.org/#download).
 2. Install [MongoDB](http://www.mongodb.org/downloads).
 3. Start the MongoDB server from a terminal window:
-```
+<pre>
 $ mongod
-```
+</pre>
 4. Install [Redis](http://redis.io/download).
 5. Start the Redis Server from another terminal window:
-```
+<pre>
 $ redis-server
-```
-6. Change the working directory to the project root:
-```
-$ cd <path to todosmvc directory>/labs/architecture-examples/backbone_node_mongo/
-```
+</pre>
+6. Make sure your current directory is backbone_node_mongo before step 7.
+<pre>
+$ pwd
+[your repos path]/todomvc/labs/architecture-examples/backbone_node_mongo
+</pre>
 7. Install dependencies using the node package manger (npm).
-```
+<pre>
 $ sudo npm link
-```
-8. Start the Todos demo server from a different terminal window:
-```
+</pre>
+
+## Running the Demo
+
+1. Start the Todos demo server from a different terminal window:
+<pre>
 $ node app
-```
-9. Visit [http://localhost:3000](http://localhost:3000) in a web browser.
+</pre>
+2. Visit [http://localhost:3000](http://localhost:3000) in a web browser.
 
 ## Credit
 

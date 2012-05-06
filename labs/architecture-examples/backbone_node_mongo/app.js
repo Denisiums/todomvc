@@ -1,7 +1,6 @@
 var express = require('express')
-  , http = require('http')
   , mongoose = require('mongoose')
-  , models = require('./models')
+  , todo = require('./models/todo')
   , routes = require('./routes')
   , sockets = require('./sockets')
   , connect = require('express/node_modules/connect')

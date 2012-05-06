@@ -37,7 +37,9 @@ $(function ($, _, Backbone, io) {
       if (!this.get("title")) {
         this.set({"title": this.defaults.title});
       }
-      _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+      this.on('serverChange', this.serverChange, this);
+      this.on('serverDelete', this.serverDelete, this);
+      this.on('modelCleanup', this.modelCleanup, this);
       if (!this.noIoBind) {
         this.ioBind('update', this.serverChange, this);
         this.ioBind('delete', this.serverDelete, this);
@@ -148,8 +150,7 @@ $(function ($, _, Backbone, io) {
     },
 
     initialize: function () {
-      _.bindAll(this, 'collectionCleanup');
-      //this.ioBind('create', this.serverCreate, this);
+      this.on('collectionCleanup', this.collectionCleanup, this);
       socket.on('/todo:create', this.serverCreate, this);
     },
 
@@ -218,8 +219,8 @@ $(function ($, _, Backbone, io) {
       "click .toggle"   : "toggleDone",
       "dblclick .view"  : "edit",
       "click a.destroy" : "clear",
-      "keypress .edit"  : "updateOnEnter"
-      //"blur .edit"      : "close"
+      "keypress .edit"  : "updateOnEnter",
+      "blur .edit"      : "close"
     },
 
     // The TodoView listens for changes to its model, re-rendering. Since there's

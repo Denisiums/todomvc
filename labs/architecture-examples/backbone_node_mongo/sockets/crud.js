@@ -1,6 +1,7 @@
 (function (exports) {
 
   "use strict";
+
   var store = require('redis').createClient();
 
   exports.addListeners = function (options) {
@@ -12,10 +13,12 @@
       , pub = options.pub
       , sessionID;
 
+    // No point in continuing without the required references
     if (!ModelClass || !key || !socket || !hs || !pub) {
       return;
     }
 
+    // The user's session id is found in the handshake
     sessionID = hs.sessionID;
 
     // ---------------
@@ -25,7 +28,7 @@
       var t = new ModelClass(data)
         , name = '/' + key + ':create';
       t.save(function (err) {
-        pub.publish('cms', JSON.stringify({key: name, data: t}));
+        pub.publish(key, JSON.stringify({key: name, data: t}));
       });
     });
 
@@ -58,7 +61,7 @@
                 result.order = data.order;
                 result.done = data.done;
                 result.save(function (err) {
-                  pub.publish('cms', JSON.stringify({key: name, data: result}));
+                  pub.publish(key, JSON.stringify({key: name, data: result}));
                 });
               }
             });
@@ -85,10 +88,10 @@
               if (err) {
                 callback(err, data);
               } else {
-                if (result) {a
+                if (result) {
                   result.remove();
                   result.save(function (err) {
-                    pub.publish('cms', JSON.stringify({key: name, data: result}));
+                    pub.publish(key, JSON.stringify({key: name, data: result}));
                   });
                 }
               }
@@ -115,7 +118,7 @@
           } else {
             store.hset(key, field, sessionID, function (err, result) {
               if (!err) {
-                pub.publish('cms', JSON.stringify({key: name, data: true}));
+                pub.publish(key, JSON.stringify({key: name, data: true}));
               }
             });
           }
@@ -141,7 +144,7 @@
             // they were the person who locked it.
             if (result === sessionID) {
               store.hdel(key, field, function (err, result) {
-                pub.publish('cms', JSON.stringify({key: name, data: true}));
+                pub.publish(key, JSON.stringify({key: name, data: true}));
               });
             }
           }
